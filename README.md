@@ -32,7 +32,6 @@ Insert a new contact into SmartEmailing lists. `$contactlists`, `$properties` an
 
 Update an existing contact in SmartEmailing lists. `$contactlists`, `$properties` and `$customfields` are arrays.
 
-
 ```contactGetOneByEmail($email)```
 
 Get an exisitng contact by email.
