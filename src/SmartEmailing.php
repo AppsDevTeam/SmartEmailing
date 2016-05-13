@@ -231,8 +231,6 @@ class SmartEmailing extends \Nette\Object
 
 		$postFields = $this->createSimpleXml($data, 'xmlrequest');
 
-		echo $postFields . "\n";
-
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml'));
 
