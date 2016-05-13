@@ -25,89 +25,80 @@ class SmartEmailing extends \Nette\Object
 		return $this->contactUpdate($email, $contactlists, $properties, $customfields);
 	}
 
+
 	public function contactUpdate($email, $contactlists = array(), $properties = array(), $customfields = array()) {
+		$datails = [];
 
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $this->url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_HEADER, FALSE);
-		curl_setopt($ch, CURLOPT_POST, TRUE);
-		$postFileds = "
-<xmlrequest>
-	<username>". $this->username ."</username>
-	<usertoken>". $this->token ."</usertoken>
-	<requesttype>Contacts</requesttype>
-	<requestmethod>createupdate</requestmethod>
-	<details>
-		<emailaddress>". $email ."</emailaddress>";
-		foreach ($properties as $key => $value) {
-			$postFileds .= "<$key>$value</$key>";
+		$details['emailaddress'] = $email;
+
+		foreach ($properties as $key => $val) {
+			$details[$key] = $val;
 		}
-		$postFileds .= "<customfields>\n";
-		foreach ($customfields as $k => $i) {
-			$postFileds .= "<item><id>". $k ."</id><value>". $i ."</value></item>\n";
-		}
-		$postFileds .= "
-		</customfields>
-		<contactliststatuses>\n";
-		foreach ($contactlists as $k => $i) {
-			$postFileds .= "<item><id>". $k ."</id><status>". $i ."</status></item>\n";
-		}
-		$postFileds .= "
-		</contactliststatuses>
-	</details>
-</xmlrequest>
-		";
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $postFileds);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: app"));
-		$response = curl_exec($ch);
-		curl_close($ch);
+
+		$details['customfields'] = $customfields;
+		$datails['contactliststatuses'] = $contactlists;
+
+		$data = [
+			'username' => $this->username,
+			'usertoken' => $this->token,
+			'requesttype' => 'Contacts',
+			'requestmethod' => 'createupdate',
+			'details' => $details,
+		];
+
+		$response = $this->callSmartemailingApiWithCurl($data);
+
+		return $response;
 	}
 
-	public function contactGetOneByEmail($email) {
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $this->url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_HEADER, FALSE);
-		curl_setopt($ch, CURLOPT_POST, TRUE);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, "
-<xmlrequest>
-	<username>". $this->username ."</username>
-	<usertoken>". $this->token ."</usertoken>
-	<requesttype>Contacts</requesttype>
-	<requestmethod>getOne</requestmethod>
-	<details>
-		<emailaddress>". $email ."</emailaddress>
-	</details>
-</xmlrequest>
-		");
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/xml"));
-		$response = curl_exec($ch);
-		curl_close($ch);
+
+	/**
+	 * get Smartemailing contact by email address
+	 *
+	 * @param  String $email
+	 *
+	 * @return \SimpleXMLElement
+	 */
+	public function getOneByEmail($email) {
+		$data = [
+			'username' => $this->username,
+			'usertoken' => $this->token,
+			'requesttype' => 'Contacts',
+			'requestmethod' => 'getOne',
+			'details' => [
+				'emailaddress' => $email,
+			],
+		];
+
+		$response = $this->callSmartemailingApiWithCurl($data);
+
+		return $response;
 	}
 
+
+	/**
+	 * get Smartemailing contact by ID
+	 *
+	 * @param  int $id
+	 *
+	 * @return [ty\SimpleXMLElement
+	 */
 	public function contactGetOneByID($id) {
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $this->url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_HEADER, FALSE);
-		curl_setopt($ch, CURLOPT_POST, TRUE);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, "
-<xmlrequest>
-	<username>". $this->username ."</username>
-	<usertoken>". $this->token ."</usertoken>
-	<requesttype>Contacts</requesttype>
-	<requestmethod>getOne</requestmethod>
-	<details>
-		<id>". $id ."</id>
-	</details>
-</xmlrequest>
-		");
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/xml"));
-		$response = curl_exec($ch);
-		curl_close($ch);
-		return new \SimpleXMLElement($response);
+		$data = [
+			'username' => $this->username,
+			'usertoken' => $this->token,
+			'requesttype' => 'Contacts',
+			'requestmethod' => 'getOne',
+			'details' => [
+				'id' => $id,
+			],
+		];
+
+		$response = $this->callSmartemailingApiWithCurl($data);
+
+		return $response;
 	}
+
 
 	/**
 	 * delete Smartemailing contact by email address
@@ -117,34 +108,19 @@ class SmartEmailing extends \Nette\Object
 	 * @return \SimpleXMLElement
 	 */
 	public function contactDeleteByEmail($email) {
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $this->url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_HEADER, FALSE);
-		curl_setopt($ch, CURLOPT_POST, TRUE);
+		$data = [
+			'username' => $this->username,
+			'usertoken' => $this->token,
+			'requesttype' => 'Contacts',
+			'requestmethod' => 'delete',
+			'details' => [
+				'emailaddress' => $email,
+			],
+		];
 
-		$postFields = '
-			<xmlrequest>
-			    <username>' . $this->username . '</username>
-			    <usertoken>' . $this->token . '</usertoken>
+		$response = $this->callSmartemailingApiWithCurl($data);
 
-			    <requesttype>Contacts</requesttype>
-			    <requestmethod>delete</requestmethod>
-
-			    <details>
-			      <emailaddress>' . $email . '</emailaddress>
-			    </details>
-			</xmlrequest>
-		';
-
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/xml"));
-
-		$response = curl_exec($ch);
-
-		curl_close($ch);
-
-		return new \SimpleXMLElement($response);
+		return $response;
 	}
 
 
@@ -154,97 +130,111 @@ class SmartEmailing extends \Nette\Object
 	 * @return \SimpleXMLElement
 	 */
 	public function getAllUnsubscribedContacts() {
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $this->url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_HEADER, FALSE);
-		curl_setopt($ch, CURLOPT_POST, TRUE);
+		$data = [
+			'username' => $this->username,
+			'usertoken' => $this->token,
+			'requesttype' => 'Contacts',
+			'requestmethod' => 'getAllUnsubscribed',
+			'details' => [],
+		];
 
-		$postFields = '
-			<xmlrequest>
-			    <username>' . $this->username . '</username>
-			    <usertoken>' . $this->token . '</usertoken>
+		$response = $this->callSmartemailingApiWithCurl($data);
 
-			    <requesttype>Contacts</requesttype>
-					<requestmethod>getAllUnsubscribed</requestmethod>
-
-					<details></details>
-			</xmlrequest>
-		';
-
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/xml"));
-
-		$response = curl_exec($ch);
-
-		curl_close($ch);
-
-		return new \SimpleXMLElement($response);
+		return $response;
 	}
 
 
 	/**
 	 * batch insertion of contacts
 	 *
-	 * @param  Array $contacts 	['firstName' => 'Pepa', 'familyName' => 'Novak', 'email' => 'pepa@seznam.cz']
-	 * @param  Array $lists 		[6676 => 'confirmed']
+	 * @param  Array $contacts 	[pepa@seznam.cz' => ['name' => 'Pepa', 'surname' => 'Novak', 'lists' => [...]], novak@seznam.cz => ... ]
+	 *
+	 * 'lists' =>	['id' => 6676, 'status' => 'confirmed', 'added' => '2016-08-21 21:59:35']
 	 *
 	 * @return \SimpleXMLElement
 	 */
-	public function multipleContactsInsert($contacts, $lists) {
+	public function multipleContactsInsert($contacts) {
+		$dateTime = new \DateTime();
+
+		$contactsArray = [];
+
+		foreach ($contacts as $email => $cData) {
+
+			$contactData = [
+				'emailaddress' => $email,
+				'name' => $cData['name'],
+				'surname' => $cData['surname'],
+				'email' => $email,
+				'contactliststatuses' => $cData['lists'],
+			];
+
+			$contactsArray[] = $contactData;
+		}
+
+
+		$data = [
+			'username' => $this->username,
+			'usertoken' => $this->token,
+			'requesttype' => 'Contacts',
+			'requestmethod' => 'createupdateBatch',
+			'details' => $contactsArray,
+		];
+
+		$response = $this->callSmartemailingApiWithCurl($data);
+
+		return $response;
+	}
+
+
+	/**
+	 * convert array to xml
+	 */
+	protected function arrayToXml($array, &$xml) {
+		foreach($array as $key => $value) {
+			if (is_array($value)) {
+
+				if (!is_numeric($key)) {
+					$subnode = $xml->addChild("$key");
+					$this->arrayToXml($value, $subnode);
+
+				} else {
+					$subnode = $xml->addChild('item');
+					$this->arrayToXml($value, $subnode);
+				}
+
+			} else {
+				$xml->addChild("$key", htmlspecialchars("$value"));
+			}
+		}
+	}
+
+
+	/**
+	 * creating simple xml
+	 */
+	protected function createSimpleXml($array, $rootElementName) {
+		$xml = new \SimpleXMLElement('<' . $rootElementName . '></' . $rootElementName . '>');
+
+		$this->arrayToXml($array, $xml);
+
+		return $xml->asXML();
+	}
+
+
+	protected function callSmartemailingApiWithCurl($data) {
 		$ch = curl_init();
+
 		curl_setopt($ch, CURLOPT_URL, $this->url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
 		curl_setopt($ch, CURLOPT_POST, TRUE);
 
-		$dateTime = new \DateTime();
+		$postFields = $this->createSimpleXml($data, 'xmlrequest');
 
-		$postFields = '
-			<xmlrequest>
-				<username>' . $this->username . '</username>
-				<usertoken>' . $this->token . '</usertoken>
-
-				<requesttype>Contacts</requesttype>
-				<requestmethod>createupdateBatch</requestmethod>
-
-				<details>
-		';
-
-		foreach ($contacts as $contact) {
-			$postFields .= '
-				<item>
-					<emailaddress>' . $client['email'] . '</emailaddress>
-					<name>' . $client['firstName'] . '</name>
-					<surname>' . $client['familyName'] . '</surname>
-					<email>' . $client['email'] . '</email>
-
-					<contactliststatuses>
-			';
-
-			foreach ($lists as $id => $status) {
-				$postFields .= '
-					<item>
-						<id>' . $id . '</id>
-						<status>' . $status . '</status>
-						<added>' . $dateTime->format('Y-M-d H:i:s') . '</added>
-					</item>
-				';
-			}
-
-			$postFields .= '
-					</contactliststatuses>
-				</item>
-      ';
-		}
-
-		$postFields .= '
-				</details>
-			</xmlrequest>
-		';
+		echo $postFields . "\n";
 
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/xml"));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml'));
 
 		$response = curl_exec($ch);
 
@@ -252,5 +242,6 @@ class SmartEmailing extends \Nette\Object
 
 		return new \SimpleXMLElement($response);
 	}
+
 
 }
