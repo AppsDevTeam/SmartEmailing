@@ -17,7 +17,6 @@
 		}
 	],
 	"require": {
-		"php": ">=5.3",
 		"nette/application":      "~2.2",
 		"nette/component-model":  "~2.2",
 		"nette/utils":            "~2.2",
