@@ -27,7 +27,7 @@ class SmartEmailing extends \Nette\Object
 
 
 	public function contactUpdate($email, $contactlists = array(), $properties = array(), $customfields = array()) {
-		$datails = [];
+		$details = [];
 
 		$details['emailaddress'] = $email;
 
@@ -36,7 +36,19 @@ class SmartEmailing extends \Nette\Object
 		}
 
 		$details['customfields'] = $customfields;
-		$datails['contactliststatuses'] = $contactlists;
+
+		$contactlistsData = [];
+
+		foreach ($contactlists as $id => $status) {
+			$data = [];
+
+			$data['id'] = $id;
+			$data['status'] = $status;
+
+			$contactlistsData[] = $data;
+		}
+
+		$details['contactliststatuses'] = $contactlistsData;
 
 		$data = [
 			'username' => $this->username,
