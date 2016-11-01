@@ -9,6 +9,8 @@ namespace ADT;
 class SmartEmailing extends \Nette\Object
 {
 
+	const STATE_SUCCESS = "SUCCESS";
+
 	protected $url = 'https://app.smartemailing.cz/api/v2';
 
 	protected $username;
