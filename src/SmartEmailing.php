@@ -227,7 +227,7 @@ class SmartEmailing extends \Nette\Object
 	 * convert array to xml
 	 *
 	 * @param array $array
-	 * @param $xml
+	 * @param \SimpleXMLElement $xml
 	 */
 	protected function arrayToXml($array, &$xml) {
 		foreach($array as $key => $value) {
