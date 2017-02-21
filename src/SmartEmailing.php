@@ -236,21 +236,32 @@ class SmartEmailing extends \Nette\Object
 
 
 	protected function callSmartemailingApiWithCurl($data) {
-		$ch = curl_init();
+		try {
+			$ch = curl_init();
 
-		curl_setopt($ch, CURLOPT_URL, $this->url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_HEADER, FALSE);
-		curl_setopt($ch, CURLOPT_POST, TRUE);
+			curl_setopt($ch, CURLOPT_URL, $this->url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+			curl_setopt($ch, CURLOPT_HEADER, FALSE);
+			curl_setopt($ch, CURLOPT_POST, TRUE);
 
-		$postFields = $this->createSimpleXml($data, 'xmlrequest');
+			$postFields = $this->createSimpleXml($data, 'xmlrequest');
 
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml'));
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml'));
 
-		$response = curl_exec($ch);
+			$response = curl_exec($ch);
 
-		curl_close($ch);
+			curl_close($ch);
+
+		} catch (\Exception $e) {
+			$xml = new \SimpleXMLElement('<response></response>');
+			$errorData = ['code' => $e->getCode(), 'message' => $e->getMessage()];
+
+			$this->arrayToXml($errorData, $xml);
+			
+			return $xml;
+		}
+
 
 		return new \SimpleXMLElement($response);
 	}
