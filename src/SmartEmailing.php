@@ -17,17 +17,42 @@ class SmartEmailing extends \Nette\Object
 
 	protected $token;
 
+	/**
+	 * SmartEmailing constructor.
+	 *
+	 * @param string $username
+	 * @param string $token
+	 */
 	public function __construct($username, $token)
 	{
 		$this->username = $username;
 		$this->token = $token;
 	}
 
+
+	/**
+	 * insert contact to Smartemailing
+	 *
+	 * @param string $email
+	 * @param array $contactlists
+	 * @param array $properties
+	 * @param array $customfields
+	 * @return \SimpleXMLElement
+	 */
 	public function contactInsert($email, $contactlists = array(), $properties = array(), $customfields = array()) {
 		return $this->contactUpdate($email, $contactlists, $properties, $customfields);
 	}
 
 
+	/**
+	 * update contact in Smartemailing
+	 *
+	 * @param string $email
+	 * @param array $contactlists
+	 * @param array $properties
+	 * @param array $customfields
+	 * @return \SimpleXMLElement
+	 */
 	public function contactUpdate($email, $contactlists = array(), $properties = array(), $customfields = array()) {
 		$details = [];
 
@@ -69,7 +94,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * get Smartemailing contact by email address
 	 *
-	 * @param  String $email
+	 * @param string $email
 	 *
 	 * @return \SimpleXMLElement
 	 */
@@ -93,7 +118,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * get Smartemailing contact by ID
 	 *
-	 * @param  int $id
+	 * @param int $id
 	 *
 	 * @return [ty\SimpleXMLElement
 	 */
@@ -117,7 +142,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * delete Smartemailing contact by email address
 	 *
-	 * @param  String $email
+	 * @param string $email
 	 *
 	 * @return \SimpleXMLElement
 	 */
@@ -168,8 +193,6 @@ class SmartEmailing extends \Nette\Object
 	 * @return \SimpleXMLElement
 	 */
 	public function multipleContactsInsert($contacts) {
-		$dateTime = new \DateTime();
-
 		$contactsArray = [];
 
 		foreach ($contacts as $email => $cData) {
@@ -202,6 +225,9 @@ class SmartEmailing extends \Nette\Object
 
 	/**
 	 * convert array to xml
+	 *
+	 * @param array $array
+	 * @param \SimpleXMLElement $xml
 	 */
 	protected function arrayToXml($array, &$xml) {
 		foreach($array as $key => $value) {
@@ -225,6 +251,10 @@ class SmartEmailing extends \Nette\Object
 
 	/**
 	 * creating simple xml
+	 *
+	 * @param array $array
+	 * @param string $rootElementName
+	 * @return string | bool ... string on success and FALSE on error
 	 */
 	protected function createSimpleXml($array, $rootElementName) {
 		$xml = new \SimpleXMLElement('<' . $rootElementName . '></' . $rootElementName . '>');
@@ -235,25 +265,79 @@ class SmartEmailing extends \Nette\Object
 	}
 
 
+	/**
+	 * connect to Smartemailing API v2
+	 *
+	 * @param array $data
+	 * @return \SimpleXMLElement
+	 */
 	protected function callSmartemailingApiWithCurl($data) {
-		$ch = curl_init();
+		try {
+			$ch = curl_init();
 
-		curl_setopt($ch, CURLOPT_URL, $this->url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_HEADER, FALSE);
-		curl_setopt($ch, CURLOPT_POST, TRUE);
+			curl_setopt($ch, CURLOPT_URL, $this->url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+			curl_setopt($ch, CURLOPT_HEADER, FALSE);
+			curl_setopt($ch, CURLOPT_POST, TRUE);
 
-		$postFields = $this->createSimpleXml($data, 'xmlrequest');
+			$postFields = $this->createSimpleXml($data, 'xmlrequest');
 
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml'));
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml'));
 
-		$response = curl_exec($ch);
+			$response = curl_exec($ch);
 
-		curl_close($ch);
+			curl_close($ch);
 
-		return new \SimpleXMLElement($response);
+		} catch (\Exception $e) {
+			return $this->getErrorXml($e->getCode(), $e->getMessage());
+		}
+
+
+		if ($this->isValidXmlString($response)) {
+			return new \SimpleXMLElement($response);
+
+		} else {
+			return $this->getErrorXml('500', 'Unknown Smartemailing API error.');
+		}
 	}
 
+
+	/**
+	 * return error XML
+	 *
+	 * @param string $code
+	 * @param string $message
+	 * @return \SimpleXMLElement
+	 */
+	public function getErrorXml($code, $message) {
+		$xml = new \SimpleXMLElement('<response></response>');
+		$errorData = ['code' => $code, 'message' => $message];
+
+		$this->arrayToXml($errorData, $xml);
+
+		return $xml;
+	}
+
+
+	/**
+	 * check if xml string is valid
+	 *
+	 * @param string $xmlString
+	 * @return bool
+	 */
+	protected function isValidXmlString($xmlString) {
+		libxml_use_internal_errors(TRUE);
+
+		$doc = simplexml_load_string($xmlString);
+
+		if (!$doc) {
+			$errors = libxml_get_errors();
+
+			return empty($errors);
+		}
+
+		return FALSE;
+	}
 
 }
