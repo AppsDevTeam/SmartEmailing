@@ -254,7 +254,7 @@ class SmartEmailing extends \Nette\Object
 	 *
 	 * @param array $array
 	 * @param string $rootElementName
-	 * @return mixed
+	 * @return string | bool ... string on success and FALSE on error
 	 */
 	protected function createSimpleXml($array, $rootElementName) {
 		$xml = new \SimpleXMLElement('<' . $rootElementName . '></' . $rootElementName . '>');
