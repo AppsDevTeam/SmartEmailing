@@ -17,17 +17,41 @@ class SmartEmailing extends \Nette\Object
 
 	protected $token;
 
+	/**
+	 * SmartEmailing constructor.
+	 * @param $username
+	 * @param $token
+	 */
 	public function __construct($username, $token)
 	{
 		$this->username = $username;
 		$this->token = $token;
 	}
 
+
+	/**
+	 * insert contact to Smartemailing
+	 * 
+	 * @param $email
+	 * @param array $contactlists
+	 * @param array $properties
+	 * @param array $customfields
+	 * @return \SimpleXMLElement
+	 */
 	public function contactInsert($email, $contactlists = array(), $properties = array(), $customfields = array()) {
 		return $this->contactUpdate($email, $contactlists, $properties, $customfields);
 	}
 
 
+	/**
+	 * update contact in Smartemailing
+	 *
+	 * @param $email
+	 * @param array $contactlists
+	 * @param array $properties
+	 * @param array $customfields
+	 * @return \SimpleXMLElement
+	 */
 	public function contactUpdate($email, $contactlists = array(), $properties = array(), $customfields = array()) {
 		$details = [];
 
@@ -168,8 +192,6 @@ class SmartEmailing extends \Nette\Object
 	 * @return \SimpleXMLElement
 	 */
 	public function multipleContactsInsert($contacts) {
-		$dateTime = new \DateTime();
-
 		$contactsArray = [];
 
 		foreach ($contacts as $email => $cData) {
@@ -202,6 +224,9 @@ class SmartEmailing extends \Nette\Object
 
 	/**
 	 * convert array to xml
+	 *
+	 * @param $array
+	 * @param $xml
 	 */
 	protected function arrayToXml($array, &$xml) {
 		foreach($array as $key => $value) {
@@ -225,6 +250,10 @@ class SmartEmailing extends \Nette\Object
 
 	/**
 	 * creating simple xml
+	 *
+	 * @param $array
+	 * @param $rootElementName
+	 * @return mixed
 	 */
 	protected function createSimpleXml($array, $rootElementName) {
 		$xml = new \SimpleXMLElement('<' . $rootElementName . '></' . $rootElementName . '>');
@@ -235,6 +264,12 @@ class SmartEmailing extends \Nette\Object
 	}
 
 
+	/**
+	 * connect to Smartemailing API v2
+	 *
+	 * @param $data
+	 * @return \SimpleXMLElement
+	 */
 	protected function callSmartemailingApiWithCurl($data) {
 		try {
 			$ch = curl_init();
@@ -254,17 +289,54 @@ class SmartEmailing extends \Nette\Object
 			curl_close($ch);
 
 		} catch (\Exception $e) {
-			$xml = new \SimpleXMLElement('<response></response>');
-			$errorData = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-
-			$this->arrayToXml($errorData, $xml);
-			
-			return $xml;
+			return $this->getErrorXml($e->getCode(), $e->getMessage());
 		}
 
 
-		return new \SimpleXMLElement($response);
+		if ($this->isValidXmlString($response)) {
+			return new \SimpleXMLElement($response);
+
+		} else {
+			return $this->getErrorXml('500', 'Unknown Smartemailing API error.');
+		}
 	}
 
+
+	/**
+	 * return error XML
+	 *
+	 * @param $code
+	 * @param $message
+	 * @return \SimpleXMLElement
+	 */
+	public function getErrorXml($code, $message) {
+		$xml = new \SimpleXMLElement('<response></response>');
+		$errorData = ['code' => $code, 'message' => $message];
+
+		$this->arrayToXml($errorData, $xml);
+
+		return $xml;
+	}
+
+
+	/**
+	 * check if xml string is valid
+	 *
+	 * @param $xmlString
+	 * @return bool
+	 */
+	protected function isValidXmlString($xmlString) {
+		libxml_use_internal_errors(TRUE);
+
+		$doc = simplexml_load_string($xmlString);
+
+		if (!$doc) {
+			$errors = libxml_get_errors();
+
+			return empty($errors);
+		}
+
+		return FALSE;
+	}
 
 }
