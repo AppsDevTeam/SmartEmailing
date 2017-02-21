@@ -19,8 +19,9 @@ class SmartEmailing extends \Nette\Object
 
 	/**
 	 * SmartEmailing constructor.
-	 * @param $username
-	 * @param $token
+	 *
+	 * @param string $username
+	 * @param string $token
 	 */
 	public function __construct($username, $token)
 	{
@@ -31,8 +32,8 @@ class SmartEmailing extends \Nette\Object
 
 	/**
 	 * insert contact to Smartemailing
-	 * 
-	 * @param $email
+	 *
+	 * @param string $email
 	 * @param array $contactlists
 	 * @param array $properties
 	 * @param array $customfields
@@ -46,7 +47,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * update contact in Smartemailing
 	 *
-	 * @param $email
+	 * @param string $email
 	 * @param array $contactlists
 	 * @param array $properties
 	 * @param array $customfields
@@ -93,7 +94,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * get Smartemailing contact by email address
 	 *
-	 * @param  String $email
+	 * @param string $email
 	 *
 	 * @return \SimpleXMLElement
 	 */
@@ -117,7 +118,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * get Smartemailing contact by ID
 	 *
-	 * @param  int $id
+	 * @param int $id
 	 *
 	 * @return [ty\SimpleXMLElement
 	 */
@@ -141,7 +142,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * delete Smartemailing contact by email address
 	 *
-	 * @param  String $email
+	 * @param string $email
 	 *
 	 * @return \SimpleXMLElement
 	 */
@@ -225,7 +226,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * convert array to xml
 	 *
-	 * @param $array
+	 * @param array $array
 	 * @param $xml
 	 */
 	protected function arrayToXml($array, &$xml) {
@@ -251,8 +252,8 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * creating simple xml
 	 *
-	 * @param $array
-	 * @param $rootElementName
+	 * @param array $array
+	 * @param string $rootElementName
 	 * @return mixed
 	 */
 	protected function createSimpleXml($array, $rootElementName) {
@@ -267,7 +268,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * connect to Smartemailing API v2
 	 *
-	 * @param $data
+	 * @param array $data
 	 * @return \SimpleXMLElement
 	 */
 	protected function callSmartemailingApiWithCurl($data) {
@@ -305,8 +306,8 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * return error XML
 	 *
-	 * @param $code
-	 * @param $message
+	 * @param string $code
+	 * @param string $message
 	 * @return \SimpleXMLElement
 	 */
 	public function getErrorXml($code, $message) {
@@ -322,7 +323,7 @@ class SmartEmailing extends \Nette\Object
 	/**
 	 * check if xml string is valid
 	 *
-	 * @param $xmlString
+	 * @param string $xmlString
 	 * @return bool
 	 */
 	protected function isValidXmlString($xmlString) {
