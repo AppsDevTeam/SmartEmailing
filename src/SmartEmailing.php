@@ -293,10 +293,10 @@ class SmartEmailing extends \Nette\Object
 			return $this->getErrorXml($e->getCode(), $e->getMessage());
 		}
 
+		$xml = simplexml_load_string($response);
 
-		if ($this->isValidXmlString($response)) {
-			return new \SimpleXMLElement($response);
-
+		if ($xml !== FALSE) {
+			return $xml;
 		} else {
 			return $this->getErrorXml('500', 'Unknown Smartemailing API error.');
 		}
@@ -317,27 +317,6 @@ class SmartEmailing extends \Nette\Object
 		$this->arrayToXml($errorData, $xml);
 
 		return $xml;
-	}
-
-
-	/**
-	 * check if xml string is valid
-	 *
-	 * @param string $xmlString
-	 * @return bool
-	 */
-	protected function isValidXmlString($xmlString) {
-		libxml_use_internal_errors(TRUE);
-
-		$doc = simplexml_load_string($xmlString);
-
-		if (!$doc) {
-			$errors = libxml_get_errors();
-
-			return empty($errors);
-		}
-
-		return FALSE;
 	}
 
 }
