@@ -295,7 +295,7 @@ class SmartEmailing extends \Nette\Object
 
 		$xml = simplexml_load_string($response);
 
-		if ($xml) {
+		if ($xml !== FALSE) {
 			return $xml;
 		} else {
 			return $this->getErrorXml('500', 'Unknown Smartemailing API error.');
