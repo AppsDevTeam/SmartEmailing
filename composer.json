@@ -2,30 +2,20 @@
 	"name": "adt/smartemailing",
 	"type": "library",
 	"description": "Easy way to interact with SmartEmailing API from PHP",
-	"keywords": ["nextras", "appsdevteam", "nette", "smartemailing"],
 	"license": ["MIT"],
 	"authors": [
 		{
-			"name": "Adam Stepanek",
-			"email": "adam@appsdevteam.com",
-			"homepage": "http://appsdevteam.com"
-		},
-		{
-			"name": "Tomas Kudelka",
-			"email": "tomas@appsdevteam.com",
-			"homepage": "http://appsdevteam.com"
+			"name": "Apps Dev Team",
+			"email": "hello@appsdevteam.com",
+			"homepage": "https://www.appsdevteam.com"
 		}
 	],
+	"minimum-stability": "stable",
 	"require": {
 		"nette/application":      "~2.2",
 		"nette/component-model":  "~2.2",
 		"nette/utils":            "~2.2",
 		"nextras/latte-macros":   "~1.1.0"
-	},
-	"extra": {
-		"branch-alias": {
-			"dev-master": "2.1-dev"
-		}
 	},
 	"autoload": {
 		"psr-4": { "ADT\\": "src/" }
