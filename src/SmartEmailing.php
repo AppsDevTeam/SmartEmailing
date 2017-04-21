@@ -293,16 +293,17 @@ class SmartEmailing extends \Nette\Object
 			return $this->getErrorXml($e->getCode(), $e->getMessage());
 		}
 
-		libxml_use_internal_errors(TRUE);
+		$previousInternalErrors = libxml_use_internal_errors(TRUE);
+		libxml_clear_errors();
 
 		$xml = simplexml_load_string($response);
 
-		if (libxml_get_errors()) {
+		if (!empty(libxml_get_errors())) {
 			$xml = FALSE;
-			libxml_clear_errors();
 		}
 
-		libxml_use_internal_errors(FALSE);
+		libxml_clear_errors();
+		libxml_use_internal_errors($previousInternalErrors);
 
 		if ($xml !== FALSE) {
 			return $xml;
