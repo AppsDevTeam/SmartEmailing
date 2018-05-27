@@ -11,9 +11,6 @@
 		}
 	],
 	"minimum-stability": "stable",
-	"require": {
-		"nette/application":      "~2.2"
-	},
 	"autoload": {
 		"psr-4": { "ADT\\": "src/" }
 	}
