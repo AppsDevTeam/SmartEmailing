@@ -6,9 +6,8 @@ namespace ADT;
  * SmartEmailing API v2
  * http://docs.smartemailing.apiary.io/
  */
-class SmartEmailing extends \Nette\Object
+class SmartEmailing
 {
-
 	const STATE_SUCCESS = "SUCCESS";
 
 	protected $url = 'https://app.smartemailing.cz/api/v2';
