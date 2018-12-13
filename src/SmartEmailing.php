@@ -2,15 +2,35 @@
 
 namespace ADT;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use Nette\Utils\Json;
+
 /**
- * SmartEmailing API v2
+ * SmartEmailing API v3
  * http://docs.smartemailing.apiary.io/
  */
 class SmartEmailing
 {
-	const STATE_SUCCESS = "SUCCESS";
+	const NODE_PING = 'ping';
+	const NODE_CHECK_CREDENTIALS = 'check-credentials';
+	const NODE_CONTACTLISTS = 'contactlists';
+	const NODE_CUSTOMFIELDS = 'customfields';
+	const NODE_CUSTOMFIELDS_OPTIONS = 'customfield-options';
+	const NODE_CONTACT_CUSTOMFIELDS = 'contact-customfields';
+	const NODE_CHANGE_EMAILADDRESS = 'change-emailaddress';
+	const NODE_CONTACT_FORGET = 'contacts/forget';
+	const NODE_CONTACTS = 'contacts';
+	const NODE_IMPORT = 'import';
+	const NODE_PURPOSES = 'purposes';
+	const NODE_PURPOSE_CONNECTIONS = 'purpose-connections';
 
-	protected $url = 'https://app.smartemailing.cz/api/v2';
+	const METHOD_GET = 'GET';
+	const METHOD_POST = 'POST';
+	const METHOD_PUT = 'PUT';
+	const METHOD_DELETE = 'DELETE';
+
+	protected $url = 'https://app.smartemailing.cz/api/v3';
 
 	protected $username;
 
@@ -30,302 +50,232 @@ class SmartEmailing
 
 
 	/**
-	 * insert contact to Smartemailing
+	 * Aliveness test
 	 *
-	 * @param string $email
-	 * @param array $contactlists
-	 * @param array $properties
-	 * @param array $customfields
-	 * @return \SimpleXMLElement
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	public function contactInsert($email, $contactlists = array(), $properties = array(), $customfields = array()) {
-		return $this->contactUpdate($email, $contactlists, $properties, $customfields);
+	public function ping()
+	{
+		return $this->call(self::METHOD_GET, self::NODE_PING);
 	}
 
 
 	/**
-	 * update contact in Smartemailing
+	 * Login test
 	 *
-	 * @param string $email
-	 * @param array $contactlists
-	 * @param array $properties
-	 * @param array $customfields
-	 * @return \SimpleXMLElement
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	public function contactUpdate($email, $contactlists = array(), $properties = array(), $customfields = array()) {
-		$details = [];
+	public function checkCredentials()
+	{
+		return $this->call(self::METHOD_GET, self::NODE_CHECK_CREDENTIALS);
+	}
 
-		$details['emailaddress'] = $email;
 
-		foreach ($properties as $key => $val) {
-			$details[$key] = $val;
+	/**
+	 * @param string $name
+	 * @param string $senderName
+	 * @param string $senderEmail email
+	 * @param string $replyTo email
+	 * @param string|null $publicName
+	 * @throws SmartEmailingException
+	 */
+	public function createContactlist($name, $senderName, $senderEmail, $replyTo, $publicName = NULL)
+	{
+		$data = [
+			'name' => $name,
+			'sendername' => $senderName,
+			'senderemail' => $senderEmail,
+			'replyto' => $replyTo,
+		];
+		if (is_string($publicName)) {
+			$data['publicname'] = $publicName;
 		}
-
-		$details['customfields'] = $customfields;
-
-		$contactlistsData = [];
-
-		foreach ($contactlists as $id => $status) {
-			$data = [];
-
-			$data['id'] = $id;
-			$data['status'] = $status;
-
-			$contactlistsData[] = $data;
-		}
-
-		$details['contactliststatuses'] = $contactlistsData;
-
-		$data = [
-			'username' => $this->username,
-			'usertoken' => $this->token,
-			'requesttype' => 'Contacts',
-			'requestmethod' => 'createupdate',
-			'details' => $details,
-		];
-
-		$response = $this->callSmartemailingApiWithCurl($data);
-
-		return $response;
+		return $this->call(self::METHOD_POST, self::NODE_CONTACTLISTS, $data);
 	}
 
 
 	/**
-	 * get Smartemailing contact by email address
-	 *
-	 * @param string $email
-	 *
-	 * @return \SimpleXMLElement
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	public function getOneByEmail($email) {
-		$data = [
-			'username' => $this->username,
-			'usertoken' => $this->token,
-			'requesttype' => 'Contacts',
-			'requestmethod' => 'getOne',
-			'details' => [
-				'emailaddress' => $email,
-			],
-		];
-
-		$response = $this->callSmartemailingApiWithCurl($data);
-
-		return $response;
+	public function getContactlists()
+	{
+		return $this->call(self::METHOD_GET, self::NODE_CONTACTLISTS);
 	}
 
 
 	/**
-	 * get Smartemailing contact by ID
-	 *
-	 * @param int $id
-	 *
-	 * @return [ty\SimpleXMLElement
+	 * @param $id
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	public function contactGetOneByID($id) {
-		$data = [
-			'username' => $this->username,
-			'usertoken' => $this->token,
-			'requesttype' => 'Contacts',
-			'requestmethod' => 'getOne',
-			'details' => [
-				'id' => $id,
-			],
-		];
+	public function getContactlist($id)
+	{
+		return $this->call(self::METHOD_GET, self::NODE_CONTACTLISTS . "/" . $id);
+	}
 
-		$response = $this->callSmartemailingApiWithCurl($data);
+	/**
+	 * @param $id
+	 * @param string|null $name
+	 * @param string|null $senderName
+	 * @param string|null $senderEmail
+	 * @param string|null $replyTo
+	 * @param string|null $publicName
+	 * @return array
+	 * @throws SmartEmailingException
+	 */
+	public function updateContactlist($id, $name = NULL, $senderName = NULL, $senderEmail = NULL, $replyTo = NULL, $publicName = NULL)
+	{
+		$data = [];
+		if ($name !== NULL) $data['name'] = $name;
+		if ($senderName !== NULL) $data['sendername'] = $senderName;
+		if ($senderEmail !== NULL) $data['senderemail'] = $senderEmail;
+		if ($replyTo !== NULL) $data['replyto'] = $replyTo;
+		if ($publicName !== NULL) $data['publicname'] = $publicName;
+		if ($publicName !== NULL) $data['publicname'] = $publicName;
 
-		return $response;
+		return $this->call(self::METHOD_PUT, self::NODE_CONTACTLISTS . "/" . $id, $data);
 	}
 
 
 	/**
-	 * delete Smartemailing contact by email address
-	 *
-	 * @param string $email
-	 *
-	 * @return \SimpleXMLElement
+	 * @param string $from
+	 * @param string $to
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	public function contactDeleteByEmail($email) {
-		$data = [
-			'username' => $this->username,
-			'usertoken' => $this->token,
-			'requesttype' => 'Contacts',
-			'requestmethod' => 'delete',
-			'details' => [
-				'emailaddress' => $email,
-			],
-		];
-
-		$response = $this->callSmartemailingApiWithCurl($data);
-
-		return $response;
+	public function changeContactEmail($from, $to)
+	{
+		return $this->call(self::METHOD_POST, self::NODE_CHANGE_EMAILADDRESS, [
+			'from' => $from,
+			'to' => $to,
+		]);
 	}
 
 
 	/**
-	 * return all unsubscribed contacts from all lists of useraccount
+	 * Deletes contact and anonymizes all his leftover data. This action cannot be undone.
+	 * This is GDPR complaint method to secure contact's right to be forgotten.
 	 *
-	 * @return \SimpleXMLElement
+	 * @param $id
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	public function getAllUnsubscribedContacts() {
-		$data = [
-			'username' => $this->username,
-			'usertoken' => $this->token,
-			'requesttype' => 'Contacts',
-			'requestmethod' => 'getAllUnsubscribed',
-			'details' => [],
-		];
-
-		$response = $this->callSmartemailingApiWithCurl($data);
-
-		return $response;
+	public function deleteContact($id)
+	{
+		return $this->call(self::METHOD_DELETE, self::NODE_CONTACT_FORGET . "/" . $id);
 	}
 
 
 	/**
-	 * batch insertion of contacts
-	 *
-	 * @param  Array $contacts 	[pepa@seznam.cz' => ['name' => 'Pepa', 'surname' => 'Novak', 'lists' => [...]], novak@seznam.cz => ... ]
-	 *
-	 * 'lists' =>	['id' => 6676, 'status' => 'confirmed', 'added' => '2016-08-21 21:59:35']
-	 *
-	 * @return \SimpleXMLElement
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	public function multipleContactsInsert($contacts) {
-		$contactsArray = [];
-
-		foreach ($contacts as $email => $cData) {
-
-			$contactData = [
-				'emailaddress' => $email,
-				'name' => $cData['name'],
-				'surname' => $cData['surname'],
-				'email' => $email,
-				'contactliststatuses' => $cData['lists'],
-			];
-
-			$contactsArray[] = $contactData;
-		}
-
-
-		$data = [
-			'username' => $this->username,
-			'usertoken' => $this->token,
-			'requesttype' => 'Contacts',
-			'requestmethod' => 'createupdateBatch',
-			'details' => $contactsArray,
-		];
-
-		$response = $this->callSmartemailingApiWithCurl($data);
-
-		return $response;
+	public function getContacts()
+	{
+		return $this->call(self::METHOD_GET, self::NODE_CONTACTS);
 	}
 
 
 	/**
-	 * convert array to xml
-	 *
-	 * @param array $array
-	 * @param \SimpleXMLElement $xml
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	protected function arrayToXml($array, &$xml) {
-		foreach($array as $key => $value) {
-			if (is_array($value)) {
+	public function getContact($id)
+	{
+		return $this->call(self::METHOD_GET, self::NODE_CONTACTS . "/" . $id);
+	}
 
-				if (!is_numeric($key)) {
-					$subnode = $xml->addChild("$key");
-					$this->arrayToXml($value, $subnode);
 
-				} else {
-					$subnode = $xml->addChild('item');
-					$this->arrayToXml($value, $subnode);
-				}
+	/**
+	 * https://app.smartemailing.cz/docs/api/v3/index.html#api-Import-Import_contacts
+	 *
+	 * @param $email
+	 * @param array|NULL $contactLists
+	 * @param array|NULL $properties
+	 * @param array|NULL $customFields
+	 * @param array|NULL $purposes
+	 * @param array|NULL $settings
+	 */
+	public function importContact($email, array $contactLists = NULL, array $properties = NULL, array $customFields = NULL, array $purposes = NULL, array $settings = NULL)
+	{
+		$contact = [
+			'emailaddress' => $email,
+		];
 
-			} else {
-				$xml->addChild("$key", htmlspecialchars("$value"));
+		if (is_array($contactLists)) {
+			$contact['contactlists'] = [];
+			foreach ($contactLists as $id => $status) {
+				$contact['contactlists'][] = [
+					'id' => $id,
+					'status' => $status,
+				];
 			}
 		}
+
+		if (is_array($properties)) {
+			foreach ($properties as $name => $value) {
+				$contact['data'][$name] = $value;
+			}
+		}
+
+		if (is_array($customFields)) {
+			$contact['customfields'] = $customFields;
+		}
+
+		if (is_array($purposes)) {
+			$contact['purposes'] = $purposes;
+		}
+
+		$data = [
+			'data' => [
+				$contact,
+			],
+		];
+
+		if (is_array($settings)) {
+			$data['settings'] = $settings;
+		}
+
+		return $this->call(self::METHOD_POST, self::NODE_IMPORT, $data);
 	}
 
-
 	/**
-	 * creating simple xml
+	 * connect to Smartemailing API v3
 	 *
-	 * @param array $array
-	 * @param string $rootElementName
-	 * @return string | bool ... string on success and FALSE on error
+	 * @param string $method
+	 * @param string $node
+	 * @param array|null $data
+	 * @param array|null $query
+	 * @return array
+	 * @throws SmartEmailingException
 	 */
-	protected function createSimpleXml($array, $rootElementName) {
-		$xml = new \SimpleXMLElement('<' . $rootElementName . '></' . $rootElementName . '>');
+	protected function call($method, $node, $data = NULL, $query = NULL)
+	{
+		$options = [
+			'auth' => [$this->username, $this->token],
+		];
+		if (is_array($data)) {
+			$options['json'] = $data;
+		}
+		if (is_array($query)) {
+			$options['query'] = $query;
+		}
 
-		$this->arrayToXml($array, $xml);
+		$client = new Client();
 
-		return $xml->asXML();
-	}
-
-
-	/**
-	 * connect to Smartemailing API v2
-	 *
-	 * @param array $data
-	 * @return \SimpleXMLElement
-	 */
-	protected function callSmartemailingApiWithCurl($data) {
 		try {
-			$ch = curl_init();
-
-			curl_setopt($ch, CURLOPT_URL, $this->url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-			curl_setopt($ch, CURLOPT_HEADER, FALSE);
-			curl_setopt($ch, CURLOPT_POST, TRUE);
-
-			$postFields = $this->createSimpleXml($data, 'xmlrequest');
-
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml'));
-
-			$response = curl_exec($ch);
-
-			curl_close($ch);
-
-		} catch (\Exception $e) {
-			return $this->getErrorXml($e->getCode(), $e->getMessage());
+			$response = $client->request($method, $this->url . "/" . $node, $options);
+		} catch (ClientException $e) {
+			$response = $e->getResponse();
+			$body = Json::decode((string) $response->getBody(), Json::FORCE_ARRAY);
+			throw new SmartEmailingException($body['message'], $response->getStatusCode());
 		}
 
-		$previousInternalErrors = libxml_use_internal_errors(TRUE);
-		libxml_clear_errors();
-
-		$xml = simplexml_load_string($response);
-
-		if (!empty(libxml_get_errors())) {
-			$xml = FALSE;
-		}
-
-		libxml_clear_errors();
-		libxml_use_internal_errors($previousInternalErrors);
-
-		if ($xml !== FALSE) {
-			return $xml;
-		} else {
-			return $this->getErrorXml('500', 'Unknown Smartemailing API error.');
-		}
+		return Json::decode((string) $response->getBody(), Json::FORCE_ARRAY);
 	}
 
-
-	/**
-	 * return error XML
-	 *
-	 * @param string $code
-	 * @param string $message
-	 * @return \SimpleXMLElement
-	 */
-	public function getErrorXml($code, $message) {
-		$xml = new \SimpleXMLElement('<response></response>');
-		$errorData = ['code' => $code, 'message' => $message];
-
-		$this->arrayToXml($errorData, $xml);
-
-		return $xml;
-	}
 
 }
