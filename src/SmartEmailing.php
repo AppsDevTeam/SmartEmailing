@@ -217,7 +217,7 @@ class SmartEmailing
 
 		if (is_array($properties)) {
 			foreach ($properties as $name => $value) {
-				$contact['data'][$name] = $value;
+				$contact[$name] = $value;
 			}
 		}
 
